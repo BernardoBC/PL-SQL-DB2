@@ -446,16 +446,16 @@ execute INSCIUDADES(1000);
 
 --RegistroEntrada
 CREATE TABLE RegistroEntrada(
-  cedulaHuesped number constraint primary key,
-  idHOtelDeseado number,
+  cedula number constraint primary key,
+  idHotel number,
   freachaEntrada date,
   fechaSalida date,
   cantidadHabitaciones number
 );
 
 CREATE TABLE Bitacora(
-  cedulaHuesped number constraint primary key,
-  idHOtelDeseado number,
+  cedula number constraint primary key,
+  idHotel number,
   freachaEntrada date,
   fechaSalida date,
   cantidadDeseada number,
@@ -467,4 +467,36 @@ grant INSERT on RegistroEntrada to desarrollador;
 grant SELECT on Bitacora to desarrollador;
 grant INSERT on Bitacora to desarrollador;
 
+--desde desarrolador
+-- INSERT Ciudades
+CREATE OR REPLACE PROCEDURE INSTRANSACCIONHABITACION ()
+ as
+cursor cRegistros is SELECT *
+  FROM dba_Contratos.RegistroEntrada;
+cursor cCedula is SELECT cedula
+  FROM dba_Contratos.Huespedes;
+begin
+  FOR rcRegistros in cRegistros LOOP
+    
+    FOR cCedula in cCedula LOOP
+     IF(rcRegistro.cedula==cCedula.cedula)
+      bandera = true
+    END LOOP
+    if(bandera)
+    else 
+      exit
+  END LOOP;
+end;
 
+
+
+
+
+  for j in 1..total loop
+    INSERT INTO dba_Hoteles.Ciudades values(
+      maxid+j,
+      'Ciudad '||dbms_random.string('U',5),
+      trunc(dbms_random.value(1,300)),   
+      'InfoTur '||dbms_random.string('U',8));                           
+    commit; 
+  end loop;
