@@ -22,6 +22,7 @@ from user_sys_privs;
 --desde system
 select * 
 from dba_tab_privs;
+where grantee like 'DBA_%';
 
 --en cada dba
 select *
@@ -56,7 +57,7 @@ from user_ts_quotas;
 
 --desde system
 --Para ver objetos desde system es dba_objects y desde cada usuario es user_ts_quotas
-select oowner, object_name, object_type
+select owner, object_name, object_type
 from dba_objects
 where owner like 'DBA_%';
 
