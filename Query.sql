@@ -12,6 +12,10 @@ select *
 from dba_sys_privs
 where grantee like 'DBA_%';
 
+select *
+from dba_sys_privs
+where grantee like 'desarrollador';
+
 --desde cada usuario dba
 select *
 from user_sys_privs;
@@ -21,8 +25,12 @@ from user_sys_privs;
 
 --desde system
 select * 
-from dba_tab_privs;
+from dba_tab_privs
 where grantee like 'DBA_%';
+
+select * 
+from dba_tab_privs
+where grantee like 'desarrollador';
 
 --en cada dba
 select *
