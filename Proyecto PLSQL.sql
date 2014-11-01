@@ -15,9 +15,9 @@ create user dba_Contratos identified by dba_Contratos
 	quota unlimited on users;
 
 --permisos
-grant create session, create table to dba_Hoteles;
-grant create session, create table to dba_Servicios;
-grant create session, create table to dba_Contratos;
+grant create session, CREATE TABLE to dba_Hoteles;
+grant create session, CREATE TABLE to dba_Servicios;
+grant create session, CREATE TABLE to dba_Contratos;
 
 --desde dba_Hoteles
 
@@ -128,37 +128,37 @@ temporary tablespace temp;
 grant create session, create procedure to desarrollador;
 
 --desde dba_Hoteles dar permiso
-grant insert on Ciudades to desarrollador;
-grant insert on CadenasHoteleras to desarrollador;
-grant insert on Hoteles to desarrollador;
-grant insert on Habitaciones to desarrollador;
-grant insert on PaqueteEnHotel to desarrollador;
+grant INSERT on Ciudades to desarrollador;
+grant INSERT on CadenasHoteleras to desarrollador;
+grant INSERT on Hoteles to desarrollador;
+grant INSERT on Habitaciones to desarrollador;
+grant INSERT on PaqueteEnHotel to desarrollador;
 
-grant select on Ciudades to desarrollador;
-grant select on CadenasHoteleras to desarrollador;
-grant select on Hoteles to desarrollador;
-grant select on Habitaciones to desarrollador;
-grant select on PaqueteEnHotel to desarrollador;
+grant SELECT on Ciudades to desarrollador;
+grant SELECT on CadenasHoteleras to desarrollador;
+grant SELECT on Hoteles to desarrollador;
+grant SELECT on Habitaciones to desarrollador;
+grant SELECT on PaqueteEnHotel to desarrollador;
 
 --desde dba_Servicios
-grant insert on Servicios to desarrollador;
-grant insert on ServiciosEnPaquetes to desarrollador;
-grant insert on Paquetes to desarrollador;
+grant INSERT on Servicios to desarrollador;
+grant INSERT on ServiciosEnPaquetes to desarrollador;
+grant INSERT on Paquetes to desarrollador;
 
-grant select on Servicios to desarrollador;
-grant select on ServiciosEnPaquetes to desarrollador;
-grant select on Paquetes to desarrollador;
+grant SELECT on Servicios to desarrollador;
+grant SELECT on ServiciosEnPaquetes to desarrollador;
+grant SELECT on Paquetes to desarrollador;
 
 --desde dba_Contratos
-grant select on Contratos to desarrollador;
-grant select on Huespedes to desarrollador;
-grant select on PaquetesComprados to desarrollador;
-grant select on ContratoDeHabitacion to desarrollador;
+grant SELECT on Contratos to desarrollador;
+grant SELECT on Huespedes to desarrollador;
+grant SELECT on PaquetesComprados to desarrollador;
+grant SELECT on ContratoDeHabitacion to desarrollador;
 
-grant insert on Contratos to desarrollador;
-grant insert on Huespedes to desarrollador;
-grant insert on PaquetesComprados to desarrollador;
-grant insert on ContratoDeHabitacion to desarrollador;
+grant INSERT on Contratos to desarrollador;
+grant INSERT on Huespedes to desarrollador;
+grant INSERT on PaquetesComprados to desarrollador;
+grant INSERT on ContratoDeHabitacion to desarrollador;
 
 
 --En procedimientos, no usar ""
@@ -167,26 +167,27 @@ grant insert on ContratoDeHabitacion to desarrollador;
 
 
 --PaqueteEnHotel
-
-CREATE OR REPLACE PROCEDURE INSPAQUETEENHOTEL (total in number)
+--@params total es el total de todos los inserts
+--@param totalporTable es el maximo numbero de inserts por ciclo
+CREATE OR REPLACE PROCEDURE INSPAQUETEENHOTEL (total in number, totalporTabla in number)
  as
 
-cursor cHoteles is select idHotel
-	from dba_Hoteles.Hoteles;
-cursor cPaquetes is select *
-	from (
-		select idPaquetes
-			from dba_Servicios.Paquetes
+cursor cHoteles is SELECT idHotel
+	FROM dba_Hoteles.Hoteles;
+cursor cPaquetes is SELECT *
+	FROM (
+		SELECT idPaquetes
+			FROM dba_Servicios.Paquetes
 			order by dbms_random.value()
     )
-	where rownum <= trunc(dbms_random.value(1,total));
+	WHERE rownum <= trunc(dbms_random.value(1,totalporTabla));
 cont number;
 
 begin
 cont:=0;
   for rcHoteles in cHoteles loop  	
     for rcPaquetes in cPaquetes loop
-      insert into dba_Hoteles.PaqueteEnHotel values(
+      INSERT INTO dba_Hoteles.PaqueteEnHotel values(
         rcPaquetes.idPaquetes,
         rcHoteles.idHotel,
         trunc(dbms_random.value(5,200)));
@@ -203,18 +204,20 @@ cont:=0;
 end;
 
 --Habitaciones
-CREATE OR REPLACE PROCEDURE INSHABITACIONES (total in number)
+--@params total es el total de todos los inserts
+--@param totalporTable es el maximo numbero de inserts por ciclo
+CREATE OR REPLACE PROCEDURE INSHABITACIONES (total in number, totalporTabla in number)
  as
 
-cursor cHoteles is select idHotel
-  from dba_Hoteles.Hoteles;
+cursor cHoteles is SELECT idHotel
+  FROM dba_Hoteles.Hoteles;
 ca number;
 cont number;
 begin
   for rcHoteles in cHoteles loop
-    ca:=trunc(dbms_random.value(1,total));
+    ca:=trunc(dbms_random.value(1,totalporTabla));
     for j in 1..ca loop
-      insert into dba_Hoteles.Habitaciones values(
+      INSERT INTO dba_Hoteles.Habitaciones values(
         j,
         rcHoteles.idHotel,
         'TipoHabitacion '||dbms_random.string('U',4),
@@ -238,11 +241,11 @@ CREATE OR REPLACE PROCEDURE INSHUESPEDES (total in number)
 as
 maxid number;
 begin
-	select nvl(max(cedula),0) into maxid --nvl(<select>,0) regresa 0 si <select> regresa NULL
-    	from dba_Contratos.Huespedes;
+	SELECT nvl(max(cedula),0) INTO maxid --nvl(<SELECT>,0) regresa 0 si <SELECT> regresa NULL
+    	FROM dba_Contratos.Huespedes;
 	for i in 1..total loop
 	    if dbms_random.value(0,1)<=0.5 then
-			insert into dba_Contratos.Huespedes values(
+			INSERT INTO dba_Contratos.Huespedes values(
 				maxid+i,
 				'NOMBRE '||dbms_random.string('U',8),
 		        'M',
@@ -250,7 +253,7 @@ begin
 		        trunc(dbms_random.value(10000000,99999999)),
 		        'PAIS '||dbms_random.string('U',3)); 
 	    else
-	    	insert into dba_Contratos.Huespedes values(
+	    	INSERT INTO dba_Contratos.Huespedes values(
 		        maxid+i,
 		        'NOMBRE '||dbms_random.string('U',8),
 		        'F',
@@ -271,10 +274,10 @@ CREATE OR REPLACE PROCEDURE INSSERVICIOS (total in number)
  as
 maxid number;
 begin
-	select nvl(max(idServicio),0) into maxid
-		from dba_Servicios.Servicios;
+	SELECT nvl(max(idServicio),0) INTO maxid
+		FROM dba_Servicios.Servicios;
 	for i in 1..total loop
-		insert into dba_Servicios.Servicios values(
+		INSERT INTO dba_Servicios.Servicios values(
 			maxid+i,  
 			'Definicion '||dbms_random.string('U',8),
 			trunc(dbms_random.values(1,100)));		
@@ -288,10 +291,10 @@ CREATE OR REPLACE PROCEDURE INSPAQUETES (total in number)
 as
 maxid number;
 begin
-	select nvl(max(idPaquetes),0) into maxid
-		from dba_Servicios.Paquetes;
+	SELECT nvl(max(idPaquetes),0) INTO maxid
+		FROM dba_Servicios.Paquetes;
 	for i in 1..total loop
-		insert into dba_Servicios.Paquetes values(
+		INSERT INTO dba_Servicios.Paquetes values(
 			maxid+i,
 			'Nombre '||dbms_random.string('U',6),
 			'Descripcion '||dbms_random.string('U',8));
@@ -302,38 +305,47 @@ end;
 
 --Servicios en paquetes 
 -- @param total= maximo numero de servicios por paquetes
-CREATE OR REPLACE PROCEDURE INSSERVICIOSENPAQUETES(total in number)
+CREATE OR REPLACE PROCEDURE INSSERVICIOSENPAQUETES(total in number, totalporTabla in number)
 as
-Cursor cPaquetes is select idPaquetes
-	from dba_Servicios.Paquetes;
-cursor cServicios is select *
-		from (
-			select idServicio
-				from dba_Servicios.Servicios
+Cursor cPaquetes is SELECT idPaquetes
+	FROM dba_Servicios.Paquetes;
+cursor cServicios is SELECT *
+		FROM (
+			SELECT idServicio
+				FROM dba_Servicios.Servicios
 				order by dbms_random.value()
 	    )
-		where rownum <= trunc(dbms_random.value(1,total));	
+		WHERE rownum <= trunc(dbms_random.value(1,totalporTabla));	
+cont number;
 begin
+  cont:=0
 	for rcPaquetes in cPaquetes loop		
 		for rcServicios in cServicios  loop
-			insert into dba_Servicios.ServiciosEnPaquetes values(
+			INSERT INTO dba_Servicios.ServiciosEnPaquetes values(
 				rcServicios.idServicio,
 				rcPaquetes.idPaquetes);
 			commit;
+      cont:= cont+1;
+      if cont = total then
+        exit;
+      end if;  
 		end loop;
+    if cont = total then
+        exit;
+    end if; 
 	end loop;
 end;
 
 
--- Insert Ciudades
+-- INSERT Ciudades
 CREATE OR REPLACE PROCEDURE INSCIUDADES (total in number)
  as
 maxid number;
 begin
-	select nvl(max(idCiudad),0) into maxid
-  		from dba_Hoteles.Ciudades;
+	SELECT nvl(max(idCiudad),0) INTO maxid
+  		FROM dba_Hoteles.Ciudades;
   for j in 1..total loop
-    insert into dba_Hoteles.Ciudades values(
+    INSERT INTO dba_Hoteles.Ciudades values(
       maxid+j,
       'Ciudad '||dbms_random.string('U',5),
       trunc(dbms_random.value(1,300)),   
@@ -344,21 +356,23 @@ end;
 
 --cadenas hoteleras:
 --@Param total es la cantidad maxima de cadenas hoteleras por ciudad
-create or replace procedure INSCADENASHOTELERAS (total in number)
+create or replace procedure INSCADENASHOTELERAS (total in number, totalporTabla in number)
  as
-cursor cCiudades is select  *
-	  from dba_Hoteles.Ciudades;
+cursor cCiudades is SELECT  *
+	  FROM dba_Hoteles.Ciudades;
 ca number;
 maxid number;
+cont number;
 begin
-	select nvl(max(idCiudad),0) into maxid
-	  from dba_Hoteles.Ciudades;
+  cont:=0;
+	SELECT nvl(max(idCiudad),0) INTO maxid
+	  FROM dba_Hoteles.Ciudades;
     	
   for rcCiudades in cCiudades loop
-    ca:=trunc(dbms_random.value(1,total));
+    ca:=trunc(dbms_random.value(1,totalporTabla));
     for j in 1..ca loop
       maxid:=maxid+1;
-      insert into dba_Hoteles.CadenasHoteleras values(
+      INSERT INTO dba_Hoteles.CadenasHoteleras values(
         maxid,
         'Cadena Hotelera '||dbms_random.string('U',5),
         'Propietario '||dbms_random.string('U',4),
@@ -366,7 +380,14 @@ begin
         'Pagina '||dbms_random.string('U',5),                          
         rcCiudades.idCiudad);
       commit;
-    end loop; 
+      cont:= cont+1;
+      if cont = total then
+        exit;
+      end if;  
+    end loop;
+    if cont = total then
+      exit;
+    end if;   
   end loop;
 end;
 
@@ -376,26 +397,26 @@ end;
 CREATE OR REPLACE PROCEDURE INSHOTELES (total in number)
  as
 
-cursor cCadenas is select  idCadena
-  from dba_Hoteles.CadenasHoteleras;
- cursor cCiudades is select  (idCiudad)
-      from (
-      select *
-        from dba_Hoteles.Ciudades
+cursor cCadenas is SELECT  idCadena
+  FROM dba_Hoteles.CadenasHoteleras;
+ cursor cCiudades is SELECT  (idCiudad)
+      FROM (
+      SELECT *
+        FROM dba_Hoteles.Ciudades
         order by dbms_random.value()
       )
-      where rownum <= trunc(dbms_random.value(1,30)); 
+      WHERE rownum <= trunc(dbms_random.value(1,30)); 
 ca number;
 maxid number;
 cont number;
 begin
 cont:=0;
-select nvl(max(idHotel),0) into maxid
-  from dba_Hoteles.Hoteles;
+SELECT nvl(max(idHotel),0) INTO maxid
+  FROM dba_Hoteles.Hoteles;
   for rcCadenas in cCadenas loop    
     for rcCiudades in cCiudades loop
       maxid:=maxid+1;
-      insert into dba_Hoteles.Hoteles values(
+      INSERT INTO dba_Hoteles.Hoteles values(
         maxid,
         'Nombre'||dbms_random.string('U',5),
         trunc(dbms_random.value(1,8)),        

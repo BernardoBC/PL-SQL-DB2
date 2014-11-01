@@ -8,67 +8,79 @@
 --PERMISOS DE SISTEMA
 
 --desde system
-select *
-from dba_sys_privs
-where grantee like 'DBA_%';
+SELECT *
+FROM dba_sys_privs
+WHERE grantee LIKE 'DBA_%';
 
-select *
-from dba_sys_privs
-where grantee like 'desarrollador';
+SELECT *
+FROM dba_sys_privs
+WHERE grantee LIKE 'DESARROLLADOR';
 
 --desde cada usuario dba
-select *
-from user_sys_privs;
+SELECT *
+FROM user_sys_privs;
 
 -----------------------------
 --PERMISOS DE OBJETOS
 
 --desde system
-select * 
-from dba_tab_privs
-where grantee like 'DBA_%';
+SELECT * 
+FROM dba_tab_privs
+WHERE grantee LIKE 'DBA_%';
 
-select * 
-from dba_tab_privs
-where grantee like 'desarrollador';
+SELECT * 
+FROM dba_tab_privs
+WHERE grantee LIKE 'DESARROLLADOR';
 
 --en cada dba
-select *
-from user_tab_privs;
+SELECT *
+FROM user_tab_privs;
 
 ---------------------------
 --TABLESPACE
 
 --desde system
-select username, default_tablespace, temporary_tablespace
-from dba_users
-where username like 'DBA_%';
+SELECT username, default_tablespace, temporary_tablespace
+FROM dba_users
+WHERE username LIKE 'DBA_%';
+
+SELECT username, default_tablespace, temporary_tablespace
+FROM dba_users
+WHERE username LIKE 'DESARROLLADOR';
 
 --desde dba
-select username, default_tablespace, temporary_tablespace
-from user_users
+SELECT username, default_tablespace, temporary_tablespace
+FROM user_users
 
 --------------------------
 --QUOTAS
 
 --desde system
-select *
-from dba_ts_quotas
-where username like 'DBA_%';
+SELECT *
+FROM dba_ts_quotas
+WHERE username LIKE 'DBA_%';
+
+SELECT *
+FROM dba_ts_quotas
+WHERE username LIKE 'DESARROLLADOR';
 
 --desde usuario
-select *
-from user_ts_quotas;
+SELECT *
+FROM user_ts_quotas;
 
 --------------------------
 --Objetos
 
 --desde system
 --Para ver objetos desde system es dba_objects y desde cada usuario es user_ts_quotas
-select owner, object_name, object_type
-from dba_objects
-where owner like 'DBA_%';
+SELECT owner, object_name, object_type
+FROM dba_objects
+WHERE owner LIKE 'DBA_%';
+
+SELECT owner, object_name, object_type
+FROM dba_objects
+WHERE owner LIKE 'DESARROLLADOR';
 
 --desde cada dba
-select object_name, object_type
-from user_objects;
+SELECT object_name, object_type
+FROM user_objects;
