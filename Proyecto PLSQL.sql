@@ -440,3 +440,31 @@ end;
 --creacion
 execute inshuespedes(1000);
 execute INSCIUDADES(1000);
+
+--desde system
+--tablas para transacciones
+
+--RegistroEntrada
+CREATE TABLE RegistroEntrada(
+  cedulaHuesped number constraint primary key,
+  idHOtelDeseado number,
+  freachaEntrada date,
+  fechaSalida date,
+  cantidadHabitaciones number
+);
+
+CREATE TABLE Bitacora(
+  cedulaHuesped number constraint primary key,
+  idHOtelDeseado number,
+  freachaEntrada date,
+  fechaSalida date,
+  cantidadDeseada number,
+  cantidadAceptada number
+);
+
+grant SELECT on RegistroEntrada to desarrollador;
+grant INSERT on RegistroEntrada to desarrollador;
+grant SELECT on Bitacora to desarrollador;
+grant INSERT on Bitacora to desarrollador;
+
+
