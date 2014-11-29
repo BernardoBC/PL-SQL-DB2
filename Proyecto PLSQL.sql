@@ -446,20 +446,25 @@ execute INSCIUDADES(1000);
 
 --RegistroEntrada
 CREATE TABLE RegistroEntrada(
-  cedula number constraint primary key,
-  idHotel number,
-  freachaEntrada date,
-  fechaSalida date,
-  cantidadHabitaciones number
+cedula number(8) constraint pk_cedualRegistro primary key,
+idHotel number(8),
+freachaEntrada date,
+fechaSalida date,
+cantidadHabitaciones number(4)
 );
 
+--RazonDeFallo
+-- 0 = no encontro habitacion disponible
+-- 1 = cedula fallo
+-- 2 = hotel fallo
 CREATE TABLE Bitacora(
-  cedula number constraint primary key,
-  idHotel number,
-  freachaEntrada date,
+  cedula number(8) constraint pk_cedulaBitacora primary key,
+  idHotel number(8),
+  fechaEntrada date,
   fechaSalida date,
-  cantidadDeseada number,
-  cantidadAceptada number
+  cantidadDeseada number(4),
+  cantidadRechazada number(4),
+  razonDeFallo number(4)
 );
 
 grant SELECT on RegistroEntrada to desarrollador;
@@ -471,32 +476,167 @@ grant INSERT on Bitacora to desarrollador;
 -- INSERT Ciudades
 CREATE OR REPLACE PROCEDURE INSTRANSACCIONHABITACION ()
  as
+SET SERVEROUTPUT ON;
 cursor cRegistros is SELECT *
   FROM dba_Contratos.RegistroEntrada;
 cursor cCedula is SELECT cedula
   FROM dba_Contratos.Huespedes;
+cursor cHoteles is SELECT idHotel
+  FROM dba_Hoteles.Hoteles;
 begin
+  bandera IS BOOLEAN;
   FOR rcRegistros in cRegistros LOOP
-    
-    FOR cCedula in cCedula LOOP
-     IF(rcRegistro.cedula==cCedula.cedula)
-      bandera = true
-    END LOOP
-    if(bandera)
-    else 
-      exit
+    bandera := false;
+
+    FOR rcCedula in cCedula LOOP
+      IF rcRegistro.cedula = rcCedula.cedula THEN
+        bandera := true;
+        EXIT;
+      END IF;      
+    END LOOP;
+
+    IF bandera = true THEN
+      bandera := false
+      FOR rcHoteles in cHoteles LOOP
+        IF rcRegistro.idHotel = rcHoteles.idHotel THEN
+          bandera := true;
+          EXIT;
+        END IF;      
+      END LOOP;
+      IF bandera = true THEN     
+
+        --Verificar si hay habitaciones
+        DBMS_OUTPUT.PUT_LINE("listo para insert");
+
+      ELSE  
+        DBMS_OUTPUT.PUT_LINE("Hotel no Encontrado");
+        INSERT INTO dba_Contratos.Bitacora values(
+          rcRegistro.cedula,
+          rcRegistro.idHotel,
+          rcRegistro.fechaEntrada,  
+          rcRegistro.fechaSalida,
+          rcRegistro.cantidadDeseada,
+          rcRegistro.cantidadDeseada,
+          2;                           
+        commit; 
+      END IF; 
+      
+    ELSE
+      DBMS_OUTPUT.PUT_LINE("Cedula no encontrada");
+      INSERT INTO dba_Contratos.Bitacora values(
+        rcRegistro.cedula,
+        rcRegistro.idHotel,
+        rcRegistro.fechaEntrada,  
+        rcRegistro.fechaSalida,
+        rcRegistro.cantidadDeseada,
+        rcRegistro.cantidadDeseada,
+        1;                           
+      commit;       
+    END IF;     
   END LOOP;
 end;
 
 
 
+--RegistroEntrada
+
+CREATE TABLE RegistroEntrada(
+cedula number constraint pk_cedula primary key,
+idHotel number,
+freachaEntrada date,
+fechaSalida date,
+cantidadHabitaciones number
+);
 
 
-  for j in 1..total loop
-    INSERT INTO dba_Hoteles.Ciudades values(
-      maxid+j,
-      'Ciudad '||dbms_random.string('U',5),
-      trunc(dbms_random.value(1,300)),   
-      'InfoTur '||dbms_random.string('U',8));                           
-    commit; 
+--Insertar Registros
+CREATE OR REPLACE PROCEDURE INSRegistroEntrada (total in number)
+as
+
+cursor cHoteles is SELECT  *
+      FROM (
+      SELECT *
+        FROM dba_Hoteles.Hoteles
+        order by dbms_random.value()
+      );
+cursor cHuespedes is SELECT  *
+      FROM (
+      SELECT *
+        FROM dba_Contratos.Huespedes
+        order by dbms_random.value()
+      );
+
+sd NUMBER;
+cedula number;
+idHotel number;
+diaEntrada DATE;
+diaSalida Date;
+cantidadHabitaciones number;
+
+begin
+
+  OPEN cHoteles;
+  OPEN cHuespedes;
+  for i in 1..total loop
+    FETCH cHuespedes INTO rcHuespedes;
+    cedula := rcHuespedes.cedula;
+    FETCH cHoteles INTO rcHotel;
+    idHotel := rcHotel.idHotel;
+
+    SELECT to_char(systimestamp,'FF') INTO sd FROM dual;
+    dbms_random.initialize(sd);
+    diaEntrada := TRUNC(sysdate) + dbms_random.value(1,50);
+    diaSalida := TRUNC(diaEntrada) + dbms_random.value(1,14);
+
+    cantidadHabitaciones := dbms_random.value(1,5);
+
+    INSERT INTO dba_Contratos.RegistroEntrada values(
+          cedula,
+          idHotel,
+          diaEntrada,
+          diaSalida,
+          cantidadHabitaciones);
+        commit;
+
   end loop;
+  CLOSE cHuespedes;
+  CLOSE cHoteles;
+end;
+
+--lazyfiller
+
+--Insertar Registros
+CREATE OR REPLACE PROCEDURE INSRegistroEntrada (total in number)
+as
+
+sd NUMBER;
+cont1 number;
+cont2 number;
+diaEntrada DATE;
+diaSalida Date;
+cantidadHabitaciones number;
+
+begin
+  cont1 := 1;
+  cont2 := 1;
+  for i in 1..total loop
+
+    SELECT to_char(systimestamp,'FF') INTO sd FROM dual;
+    dbms_random.initialize(sd);
+    diaEntrada := TRUNC(sysdate) + dbms_random.value(1,50);
+    diaSalida := TRUNC(diaEntrada) + dbms_random.value(1,14);
+
+    cantidadHabitaciones := dbms_random.value(1,5);
+
+    INSERT INTO dba_Contratos.RegistroEntrada values(
+          cont1,
+          cont2,
+          diaEntrada,
+          diaSalida,
+          cantidadHabitaciones);
+        commit;
+    cont1 := 1+cont1;
+    cont2 := 1+cont2;
+
+  end loop;
+end;
