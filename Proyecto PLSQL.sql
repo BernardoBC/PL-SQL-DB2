@@ -435,109 +435,6 @@ SELECT nvl(max(idHotel),0) INTO maxid
   end loop;
 end;
 
-
-
---creacion
-execute inshuespedes(1000);
-execute INSCIUDADES(1000);
-
---desde system
---tablas para transacciones
-
---RegistroEntrada
-CREATE TABLE RegistroEntrada(
-cedula number(8) constraint pk_cedualRegistro primary key,
-idHotel number(8),
-freachaEntrada date,
-fechaSalida date,
-cantidadHabitaciones number(4)
-);
-
---RazonDeFallo
--- 0 = no encontro habitacion disponible
--- 1 = cedula fallo
--- 2 = hotel fallo
-CREATE TABLE Bitacora(
-  cedula number(8) constraint pk_cedulaBitacora primary key,
-  idHotel number(8),
-  fechaEntrada date,
-  fechaSalida date,
-  cantidadDeseada number(4),
-  cantidadRechazada number(4),
-  razonDeFallo number(4)
-);
-
-grant SELECT on RegistroEntrada to desarrollador;
-grant INSERT on RegistroEntrada to desarrollador;
-grant SELECT on Bitacora to desarrollador;
-grant INSERT on Bitacora to desarrollador;
-
---desde desarrolador
--- INSERT Ciudades
-CREATE OR REPLACE PROCEDURE INSTRANSACCIONHABITACION ()
- as
-SET SERVEROUTPUT ON;
-cursor cRegistros is SELECT *
-  FROM dba_Contratos.RegistroEntrada;
-cursor cCedula is SELECT cedula
-  FROM dba_Contratos.Huespedes;
-cursor cHoteles is SELECT idHotel
-  FROM dba_Hoteles.Hoteles;
-begin
-  bandera IS BOOLEAN;
-  FOR rcRegistros in cRegistros LOOP
-    bandera := false;
-
-    FOR rcCedula in cCedula LOOP
-      IF rcRegistro.cedula = rcCedula.cedula THEN
-        bandera := true;
-        EXIT;
-      END IF;      
-    END LOOP;
-
-    IF bandera = true THEN
-      bandera := false
-      FOR rcHoteles in cHoteles LOOP
-        IF rcRegistro.idHotel = rcHoteles.idHotel THEN
-          bandera := true;
-          EXIT;
-        END IF;      
-      END LOOP;
-      IF bandera = true THEN     
-
-        --Verificar si hay habitaciones
-        DBMS_OUTPUT.PUT_LINE("listo para insert");
-
-      ELSE  
-        DBMS_OUTPUT.PUT_LINE("Hotel no Encontrado");
-        INSERT INTO dba_Contratos.Bitacora values(
-          rcRegistro.cedula,
-          rcRegistro.idHotel,
-          rcRegistro.fechaEntrada,  
-          rcRegistro.fechaSalida,
-          rcRegistro.cantidadDeseada,
-          rcRegistro.cantidadDeseada,
-          2;                           
-        commit; 
-      END IF; 
-      
-    ELSE
-      DBMS_OUTPUT.PUT_LINE("Cedula no encontrada");
-      INSERT INTO dba_Contratos.Bitacora values(
-        rcRegistro.cedula,
-        rcRegistro.idHotel,
-        rcRegistro.fechaEntrada,  
-        rcRegistro.fechaSalida,
-        rcRegistro.cantidadDeseada,
-        rcRegistro.cantidadDeseada,
-        1;                           
-      commit;       
-    END IF;     
-  END LOOP;
-end;
-
-
-
 --RegistroEntrada
 
 CREATE TABLE RegistroEntrada(
@@ -603,40 +500,279 @@ begin
   CLOSE cHoteles;
 end;
 
---lazyfiller
+--creacion
+execute inshuespedes(1000);
+execute INSCIUDADES(1000);
 
---Insertar Registros
-CREATE OR REPLACE PROCEDURE INSRegistroEntrada (total in number)
-as
+--desde system
+--tablas para transacciones
 
-sd NUMBER;
-cont1 number;
-cont2 number;
-diaEntrada DATE;
-diaSalida Date;
-cantidadHabitaciones number;
+--RegistroEntrada
+CREATE TABLE RegistroEntrada(
+cedula number(8) constraint pk_cedualRegistro primary key,
+idHotel number(8),
+freachaEntrada date,
+fechaSalida date,
+cantidadHabitaciones number(4)
+);
 
+--RazonDeFallo
+-- 0 = no encontro habitacion disponible
+-- 1 = cedula fallo
+-- 2 = hotel fallo
+CREATE TABLE Bitacora(
+  cedula number(8) constraint pk_cedulaBitacora primary key,
+  idHotel number(8),
+  fechaEntrada date,
+  fechaSalida date,
+  cantidadDeseada number(4),
+  cantidadRechazada number(4),
+  razonDeFallo number(4)
+);
+
+grant SELECT on RegistroEntrada to desarrollador;
+grant INSERT on RegistroEntrada to desarrollador;
+grant SELECT on Bitacora to desarrollador;
+grant INSERT on Bitacora to desarrollador;
+grant delete on RegistroEntrada to desarrollador;
+grant delete on Bitacora to desarrollador;
+grant delete on Contratos to desarrollador;
+grant delete on ContratoDeHabitacion to desarrollador;
+grant delete on ContratoDeHabitacion to desarrollador;
+
+  
+--desde desarrolador
+-- INSERT Ciudades
+create or replace
+PROCEDURE INSTRANSACCIONHABITACION (total in number)
+ as
+cursor cRegistros is SELECT *
+  FROM dba_Contratos.RegistroEntrada;
+cursor cCedula is SELECT *
+  FROM dba_Contratos.Huespedes;
+cursor cHoteles is SELECT idHotel
+  FROM dba_Hoteles.Hoteles;
+cursor cContratoDeHabitacion is SELECT *
+  FROM dba_Hoteles.Hoteles;
+bandera BOOLEAN;
+numeroDeHabitacionesExistentes number;
+numeroDeHabitacionesOcupadas number;
+fechaEntradaHab date;
+fechaSalidaHab date;
+maxContrato number;
+maxContratoDeHabitacion number;
+contratoEncontrado number;
+HabitacionesDisponibles number;
+HabitacionesALlenar number;
+HabitacionesAPonerEnBitacora number;
+fechaEntradaEnContrato date;
+fechaSalidaEnContrato date;
+
+rcRegistro cRegistros%rowtype;
+rcHoteles cHoteles%rowtype;
+rcCedula cCedula%rowtype;
 begin
-  cont1 := 1;
-  cont2 := 1;
-  for i in 1..total loop
+  
+  FOR rcRegistro in cRegistros LOOP
+    bandera := false;
 
-    SELECT to_char(systimestamp,'FF') INTO sd FROM dual;
-    dbms_random.initialize(sd);
-    diaEntrada := TRUNC(sysdate) + dbms_random.value(1,50);
-    diaSalida := TRUNC(diaEntrada) + dbms_random.value(1,14);
+    FOR rcCedula in cCedula LOOP
+      IF rcRegistro.cedula = rcCedula.cedula THEN
+        bandera := true;
 
-    cantidadHabitaciones := dbms_random.value(1,5);
+      END IF;      
+    END LOOP;
 
-    INSERT INTO dba_Contratos.RegistroEntrada values(
-          cont1,
-          cont2,
-          diaEntrada,
-          diaSalida,
-          cantidadHabitaciones);
-        commit;
-    cont1 := 1+cont1;
-    cont2 := 1+cont2;
+    IF bandera THEN
+      bandera := false;
 
-  end loop;
+      FOR rcHoteles in cHoteles LOOP
+        IF rcRegistro.idHotel = rcHoteles.idHotel THEN
+          bandera := true;
+        END IF;      
+      END LOOP;
+      IF bandera THEN     
+        bandera := false;
+
+        --Verificar si hay habitaciones
+        --aqui esta lo bueno
+        
+
+        numeroDeHabitacionesOcupadas := 0;
+
+        select count(*) into numeroDeHabitacionesExistentes
+          from dba_Hoteles.Habitaciones
+          where hoteles_idhotel = rcRegistro.idHotel;
+
+        for curl in (select * from dba_Contratos.ContratoDeHabitacion where Habitaciones_Hoteles_idHotel = rcRegistro.idHotel) LOOP
+          select entrada into fechaEntradaHab
+            from dba_Contratos.Contratos
+            where curl.Contratos_numeroContrato = numeroContrato;
+          select salida into fechaSalidaHab
+            from dba_Contratos.Contratos
+            where curl.Contratos_numeroContrato = numeroContrato;
+          IF fechaEntradaHab < rcRegistro.fechaSalida AND fechaSalidaHab > rcRegistro.fechaEntrada THEN
+            numeroDeHabitacionesOcupadas := numeroDeHabitacionesOcupadas + 1;
+          END IF;
+        end loop;
+
+        HabitacionesDisponibles := numeroDeHabitacionesExistentes - numeroDeHabitacionesOcupadas;
+
+        --Hay habitaciones disponibles
+        IF HabitacionesDisponibles > 0 THEN
+          
+          SELECT nvl(max(numeroContrato),0) INTO maxContrato
+            FROM dba_Contratos.Contratos;
+          maxContrato := maxContrato + 1;
+          INSERT INTO dba_Contratos.Contratos values(
+            maxContrato,
+            trunc(sysdate),
+            rcRegistro.cedula,
+            'Pago'||dbms_random.string('U',3),  
+            rcRegistro.fechaEntrada,
+            rcRegistro.fechaSalida);                           
+          commit;  
+                    
+                    --Hay suficientes habitaciones disponibles
+          IF rcRegistro.cantidadHabitaciones <= HabitacionesDisponibles THEN
+          
+            for i in 1..rcRegistro.cantidadHabitaciones loop 
+              bandera := false;              
+              for curs in (select * from dba_Hoteles.Habitaciones where hoteles_idhotel = rcRegistro.idHotel) LOOP
+                IF not bandera THEN
+                  select nvl(count(*),0) into contratoEncontrado
+                    from dba_Contratos.ContratoDeHabitacion where Habitaciones_numero = curs.numero and Habitaciones_Hoteles_idHotel = rcRegistro.idHotel;
+                  IF contratoEncontrado > 0 THEN
+
+                    for rHabitacion in (select *
+                      from dba_Contratos.ContratoDeHabitacion
+                      where Habitaciones_numero = curs.numero
+                      and Habitaciones_Hoteles_idHotel = rcRegistro.idHotel) loop
+
+                      select entrada into fechaEntradaEnContrato
+                        from dba_Contratos.Contratos where numeroContrato = rHabitacion.Contratos_numeroContrato;    
+                      select salida into fechaSalidaEnContrato
+                        from dba_Contratos.Contratos where numeroContrato = rHabitacion.Contratos_numeroContrato;                
+                      IF not (fechaEntradaEnContrato < rcRegistro.fechaSalida AND fechaSalidaEnContrato > rcRegistro.fechaEntrada) THEN
+
+                        INSERT INTO dba_Contratos.ContratoDeHabitacion values(
+                          maxContrato,
+                          rHabitacion.Habitaciones_numero,
+                          rcRegistro.idHotel);
+                        commit;  
+                        bandera := true; 
+                        EXIT;                 
+                      END IF;
+
+                    END LOOP;
+                  ELSE
+
+                    INSERT INTO dba_Contratos.ContratoDeHabitacion values(
+                      maxContrato,
+                      curs.numero,
+                      rcRegistro.idHotel);
+                    commit;  
+                    bandera := true;                                  
+                  END IF;
+                END IF;  
+              end loop;
+
+
+            end loop;
+
+          --No hay suficientes habitaciones disponibles
+          ELSE
+            HabitacionesALlenar := rcRegistro.cantidadHabitaciones - HabitacionesDisponibles;
+            for i in 1..HabitacionesALlenar loop 
+              bandera := false;
+              for curs in (select * from dba_Hoteles.Habitaciones where hoteles_idhotel = rcRegistro.idHotel) LOOP
+                IF not bandera THEN
+                  select nvl(count(*),0) into contratoEncontrado
+                    from dba_Contratos.ContratoDeHabitacion where Habitaciones_numero = curs.numero and Habitaciones_Hoteles_idHotel = rcRegistro.idHotel;
+                  IF contratoEncontrado > 0 THEN
+
+                    for rHabitacion in (select *
+                      from dba_Contratos.ContratoDeHabitacion
+                      where Habitaciones_numero = curs.numero
+                      and Habitaciones_Hoteles_idHotel = rcRegistro.idHotel) loop
+
+                      select entrada into fechaEntradaEnContrato
+                        from dba_Contratos.Contratos where numeroContrato = rHabitacion.Contratos_numeroContrato;    
+                      select salida into fechaSalidaEnContrato
+                        from dba_Contratos.Contratos where numeroContrato = rHabitacion.Contratos_numeroContrato;                
+                      IF not (fechaEntradaEnContrato < rcRegistro.fechaSalida AND fechaSalidaEnContrato > rcRegistro.fechaEntrada) THEN
+                        
+
+                        INSERT INTO dba_Contratos.ContratoDeHabitacion values(
+                          maxContrato,
+                          rHabitacion.Habitaciones_numero,
+                          rcRegistro.idHotel);
+                        commit;
+                        EXIT;
+                      END IF;
+                    END LOOP;
+                  ELSE
+
+                    INSERT INTO dba_Contratos.ContratoDeHabitacion values(
+                      maxContrato,
+                      curs.numero,
+                      rcRegistro.idHotel);
+                    commit;
+                  END IF;
+                END IF;
+              end loop;
+            end loop;
+
+
+            HabitacionesAPonerEnBitacora := rcRegistro.cantidadHabitaciones - HabitacionesALlenar;
+            INSERT INTO dba_Contratos.Bitacora values(
+              rcRegistro.cedula,
+              rcRegistro.idHotel,
+              rcRegistro.fechaEntrada,  
+              rcRegistro.fechaSalida,
+              rcRegistro.cantidadHabitaciones,
+              HabitacionesALlenar,
+              0);                           
+            commit;
+
+          END IF;
+         
+        --no hay habitaciones disponibles         
+        ELSE
+          INSERT INTO dba_Contratos.Bitacora values(
+            rcRegistro.cedula,
+            rcRegistro.idHotel,
+            rcRegistro.fechaEntrada,  
+            rcRegistro.fechaSalida,
+            rcRegistro.cantidadHabitaciones,
+            rcRegistro.cantidadHabitaciones,
+            0);                           
+          commit;
+        END IF;      
+        
+      ELSE  
+        INSERT INTO dba_Contratos.Bitacora values(
+          rcRegistro.cedula,
+          rcRegistro.idHotel,
+          rcRegistro.fechaEntrada,  
+          rcRegistro.fechaSalida,
+          rcRegistro.cantidadHabitaciones,
+          rcRegistro.cantidadHabitaciones,
+          2);                           
+        commit; 
+      END IF;
+
+    ELSE
+      INSERT INTO dba_Contratos.Bitacora values(
+        rcRegistro.cedula,
+        rcRegistro.idHotel,
+        rcRegistro.fechaEntrada,  
+        rcRegistro.fechaSalida,
+        rcRegistro.cantidadHabitaciones,
+        rcRegistro.cantidadHabitaciones,
+        1);                           
+      commit;      
+     
+    END IF;     
+  END LOOP;
 end;
