@@ -1,18 +1,18 @@
 --system
 create user dba_Hoteles identified by dba_Hoteles
-	default tablespace users
-	temporary tablespace temp
-	quota unlimited on users;
+  default tablespace users
+  temporary tablespace temp
+  quota unlimited on users;
 
 create user dba_Servicios identified by dba_Servicios
-	default tablespace users
-	temporary tablespace temp
-	quota unlimited on users;
+  default tablespace users
+  temporary tablespace temp
+  quota unlimited on users;
 
 create user dba_Contratos identified by dba_Contratos
-	default tablespace users
-	temporary tablespace temp
-	quota unlimited on users;
+  default tablespace users
+  temporary tablespace temp
+  quota unlimited on users;
 
 --permisos
 grant create session, CREATE TABLE to dba_Hoteles;
@@ -173,19 +173,19 @@ CREATE OR REPLACE PROCEDURE INSPAQUETEENHOTEL (total in number, totalporTabla in
  as
 
 cursor cHoteles is SELECT idHotel
-	FROM dba_Hoteles.Hoteles;
+  FROM dba_Hoteles.Hoteles;
 cursor cPaquetes is SELECT *
-	FROM (
-		SELECT idPaquetes
-			FROM dba_Servicios.Paquetes
-			order by dbms_random.value()
+  FROM (
+    SELECT idPaquetes
+      FROM dba_Servicios.Paquetes
+      order by dbms_random.value()
     )
-	WHERE rownum <= trunc(dbms_random.value(1,totalporTabla));
+  WHERE rownum <= trunc(dbms_random.value(1,totalporTabla));
 cont number;
 
 begin
 cont:=0;
-  for rcHoteles in cHoteles loop  	
+  for rcHoteles in cHoteles loop    
     for rcPaquetes in cPaquetes loop
       INSERT INTO dba_Hoteles.PaqueteEnHotel values(
         rcPaquetes.idPaquetes,
@@ -194,11 +194,11 @@ cont:=0;
       commit;
       cont:= cont+1;
       if cont = total then
-      	exit;
+        exit;
       end if;
     end loop;
     if cont = total then
-    	exit;
+      exit;
     end if; 
   end loop;
 end;
@@ -241,28 +241,28 @@ CREATE OR REPLACE PROCEDURE INSHUESPEDES (total in number)
 as
 maxid number;
 begin
-	SELECT nvl(max(cedula),0) INTO maxid --nvl(<SELECT>,0) regresa 0 si <SELECT> regresa NULL
-    	FROM dba_Contratos.Huespedes;
-	for i in 1..total loop
-	    if dbms_random.value(0,1)<=0.5 then
-			INSERT INTO dba_Contratos.Huespedes values(
-				maxid+i,
-				'NOMBRE '||dbms_random.string('U',8),
-		        'M',
-		        trunc(dbms_random.value(21,80)),
-		        trunc(dbms_random.value(10000000,99999999)),
-		        'PAIS '||dbms_random.string('U',3)); 
-	    else
-	    	INSERT INTO dba_Contratos.Huespedes values(
-		        maxid+i,
-		        'NOMBRE '||dbms_random.string('U',8),
-		        'F',
-		        trunc(dbms_random.value(21,80)),
-		        trunc(dbms_random.value(10000000,99999999)),
-		        'PAIS '||dbms_random.string('U',3)); 
-	    end if;   
-    	commit;
-	end loop;
+  SELECT nvl(max(cedula),0) INTO maxid --nvl(<SELECT>,0) regresa 0 si <SELECT> regresa NULL
+      FROM dba_Contratos.Huespedes;
+  for i in 1..total loop
+      if dbms_random.value(0,1)<=0.5 then
+      INSERT INTO dba_Contratos.Huespedes values(
+        maxid+i,
+        'NOMBRE '||dbms_random.string('U',8),
+            'M',
+            trunc(dbms_random.value(21,80)),
+            trunc(dbms_random.value(10000000,99999999)),
+            'PAIS '||dbms_random.string('U',3)); 
+      else
+        INSERT INTO dba_Contratos.Huespedes values(
+            maxid+i,
+            'NOMBRE '||dbms_random.string('U',8),
+            'F',
+            trunc(dbms_random.value(21,80)),
+            trunc(dbms_random.value(10000000,99999999)),
+            'PAIS '||dbms_random.string('U',3)); 
+      end if;   
+      commit;
+  end loop;
 end;
 
 --ejemplo: execute inshuespedes(1000)
@@ -274,32 +274,32 @@ CREATE OR REPLACE PROCEDURE INSSERVICIOS (total in number)
  as
 maxid number;
 begin
-	SELECT nvl(max(idServicio),0) INTO maxid
-		FROM dba_Servicios.Servicios;
-	for i in 1..total loop
-		INSERT INTO dba_Servicios.Servicios values(
-			maxid+i,  
-			'Definicion '||dbms_random.string('U',8),
-			trunc(dbms_random.values(1,100)));		
-		commit;
-	end loop;
+  SELECT nvl(max(idServicio),0) INTO maxid
+    FROM dba_Servicios.Servicios;
+  for i in 1..total loop
+    INSERT INTO dba_Servicios.Servicios values(
+      maxid+i,  
+      'Definicion '||dbms_random.string('U',8),
+      trunc(dbms_random.values(1,100)));    
+    commit;
+  end loop;
 end;
-	
+  
 --Paquetes
 
 CREATE OR REPLACE PROCEDURE INSPAQUETES (total in number)
 as
 maxid number;
 begin
-	SELECT nvl(max(idPaquetes),0) INTO maxid
-		FROM dba_Servicios.Paquetes;
-	for i in 1..total loop
-		INSERT INTO dba_Servicios.Paquetes values(
-			maxid+i,
-			'Nombre '||dbms_random.string('U',6),
-			'Descripcion '||dbms_random.string('U',8));
-		commit;
-	end loop;  
+  SELECT nvl(max(idPaquetes),0) INTO maxid
+    FROM dba_Servicios.Paquetes;
+  for i in 1..total loop
+    INSERT INTO dba_Servicios.Paquetes values(
+      maxid+i,
+      'Nombre '||dbms_random.string('U',6),
+      'Descripcion '||dbms_random.string('U',8));
+    commit;
+  end loop;  
 end;
 
 
@@ -308,32 +308,32 @@ end;
 CREATE OR REPLACE PROCEDURE INSSERVICIOSENPAQUETES(total in number, totalporTabla in number)
 as
 Cursor cPaquetes is SELECT idPaquetes
-	FROM dba_Servicios.Paquetes;
+  FROM dba_Servicios.Paquetes;
 cursor cServicios is SELECT *
-		FROM (
-			SELECT idServicio
-				FROM dba_Servicios.Servicios
-				order by dbms_random.value()
-	    )
-		WHERE rownum <= trunc(dbms_random.value(1,totalporTabla));	
+    FROM (
+      SELECT idServicio
+        FROM dba_Servicios.Servicios
+        order by dbms_random.value()
+      )
+    WHERE rownum <= trunc(dbms_random.value(1,totalporTabla));  
 cont number;
 begin
   cont:=0
-	for rcPaquetes in cPaquetes loop		
-		for rcServicios in cServicios  loop
-			INSERT INTO dba_Servicios.ServiciosEnPaquetes values(
-				rcServicios.idServicio,
-				rcPaquetes.idPaquetes);
-			commit;
+  for rcPaquetes in cPaquetes loop    
+    for rcServicios in cServicios  loop
+      INSERT INTO dba_Servicios.ServiciosEnPaquetes values(
+        rcServicios.idServicio,
+        rcPaquetes.idPaquetes);
+      commit;
       cont:= cont+1;
       if cont = total then
         exit;
       end if;  
-		end loop;
+    end loop;
     if cont = total then
         exit;
     end if; 
-	end loop;
+  end loop;
 end;
 
 
@@ -342,8 +342,8 @@ CREATE OR REPLACE PROCEDURE INSCIUDADES (total in number)
  as
 maxid number;
 begin
-	SELECT nvl(max(idCiudad),0) INTO maxid
-  		FROM dba_Hoteles.Ciudades;
+  SELECT nvl(max(idCiudad),0) INTO maxid
+      FROM dba_Hoteles.Ciudades;
   for j in 1..total loop
     INSERT INTO dba_Hoteles.Ciudades values(
       maxid+j,
@@ -359,15 +359,15 @@ end;
 create or replace procedure INSCADENASHOTELERAS (total in number, totalporTabla in number)
  as
 cursor cCiudades is SELECT  *
-	  FROM dba_Hoteles.Ciudades;
+    FROM dba_Hoteles.Ciudades;
 ca number;
 maxid number;
 cont number;
 begin
   cont:=0;
-	SELECT nvl(max(idCiudad),0) INTO maxid
-	  FROM dba_Hoteles.Ciudades;
-    	
+  SELECT nvl(max(idCiudad),0) INTO maxid
+    FROM dba_Hoteles.Ciudades;
+      
   for rcCiudades in cCiudades loop
     ca:=trunc(dbms_random.value(1,totalporTabla));
     for j in 1..ca loop
@@ -426,11 +426,11 @@ SELECT nvl(max(idHotel),0) INTO maxid
       commit;
       cont:=cont+1;
       if total = cont then
-      	exit;
+        exit;
       end if;
     end loop; 
     if total = cont then
-      	exit;
+        exit;
       end if;
   end loop;
 end;
@@ -682,7 +682,7 @@ begin
 
           --No hay suficientes habitaciones disponibles
           ELSE
-            HabitacionesALlenar := rcRegistro.cantidadHabitaciones - HabitacionesDisponibles;
+            HabitacionesALlenar := rcRegistro.cantidadHabitaciones - (rcRegistro.cantidadHabitaciones - HabitacionesDisponibles);
             for i in 1..HabitacionesALlenar loop 
               bandera := false;
               for curs in (select * from dba_Hoteles.Habitaciones where hoteles_idhotel = rcRegistro.idHotel) LOOP
@@ -721,8 +721,7 @@ begin
                   END IF;
                 END IF;
               end loop;
-            end loop;
-
+            end loop;     
 
             HabitacionesAPonerEnBitacora := rcRegistro.cantidadHabitaciones - HabitacionesALlenar;
             INSERT INTO dba_Contratos.Bitacora values(
@@ -731,7 +730,7 @@ begin
               rcRegistro.fechaEntrada,  
               rcRegistro.fechaSalida,
               rcRegistro.cantidadHabitaciones,
-              HabitacionesALlenar,
+              HabitacionesAPonerEnBitacora,
               0);                           
             commit;
 
